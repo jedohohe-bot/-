@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>استبيان الصحة النفسية في بيئة العمل</title>
+<style>
+  /* ===== SETTINGS — ضع رابط الـ Web App هنا ===== */
+  /* GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/YOUR_ID/exec" */
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal: #1D9E75; --teal-dk: #0F6E56; --teal-lt: #E1F5EE;
+    --amber: #EF9F27; --amber-lt: #FAEEDA; --amber-dk: #854F0B;
+    --red: #E24B4A; --red-lt: #FCEBEB; --red-dk: #A32D2D;
+    --blue-lt: #E6F1FB; --blue: #378ADD; --blue-dk: #185FA5;
+    --gray-50: #F7F6F2; --gray-100: #ECEAE3; --gray-300: #B4B2A9;
+    --gray-500: #5F5E5A; --gray-800: #2C2C2A;
+    --radius: 10px; --radius-sm: 6px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+  body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: var(--gray-50); color: var(--gray-800); min-height: 100vh; }
+  
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* WELCOME */
+  .welcome-wrap { max-width: 520px; margin: 0 auto; padding: 3rem 1.5rem; text-align: center; }
+  .welcome-logo { width: 64px; height: 64px; background: var(--teal-lt); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
+  .welcome-logo svg { width: 32px; height: 32px; fill: var(--teal); }
+  .welcome-wrap h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .welcome-wrap p { font-size: 14px; color: var(--gray-500); line-height: 1.7; margin-bottom: 1.5rem; }
+  .info-chips { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 2rem; }
+  .chip { background: var(--gray-100); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--gray-500); }
+  .name-field { margin-bottom: 1.5rem; text-align: right; }
+  .name-field label { font-size: 13px; color: var(--gray-500); display: block; margin-bottom: 6px; }
+  .name-field input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-100); border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; background: #fff; color: var(--gray-800); }
+  .name-field input:focus { outline: none; border-color: var(--teal); }
+  .dept-field { margin-bottom: 1.5rem; text-align: right; }
+  .dept-field label { font-size: 13px; color: var(--gray-500); display: block; margin-bottom: 6px; }
+  .dept-field input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-100); border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; background: #fff; color: var(--gray-800); }
+  .dept-field input:focus { outline: none; border-color: var(--teal); }
+  .btn-start { width: 100%; padding: 13px; background: var(--teal); color: #fff; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn-start:hover { background: var(--teal-dk); }
+
+  /* SURVEY */
+  .survey-wrap { max-width: 600px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .top-bar h2 { font-size: 15px; font-weight: 600; }
+  .prog-text { font-size: 12px; color: var(--gray-500); }
+  .prog-track { height: 5px; background: var(--gray-100); border-radius: 3px; overflow: hidden; margin-bottom: 2rem; }
+  .prog-fill { height: 100%; background: var(--teal); border-radius: 3px; transition: width 0.4s ease; }
+
+  .section-block { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.25rem; margin-bottom: 1rem; }
+  .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .sec-num { width: 28px; height: 28px; background: var(--teal-lt); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--teal-dk); flex-shrink: 0; }
+  .sec-title { font-size: 15px; font-weight: 600; }
+  .sec-desc { font-size: 12px; color: var(--gray-500); }
+  
+  .q-row { padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+  .q-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .q-text { font-size: 13px; color: var(--gray-800); margin-bottom: 8px; line-height: 1.5; }
+  .scale-row { display: flex; gap: 5px; }
+  .scale-btn { flex: 1; padding: 7px 4px; font-size: 11px; border: 1px solid var(--gray-100); border-radius: var(--radius-sm); background: var(--gray-50); color: var(--gray-500); cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.3; }
+  .scale-btn:hover { background: var(--teal-lt); border-color: var(--teal); color: var(--teal-dk); }
+  .scale-btn.s1 { background: var(--red-lt); border-color: var(--red); color: var(--red-dk); }
+  .scale-btn.s2 { background: #FEF3DC; border-color: #F5B942; color: #7A4F00; }
+  .scale-btn.s3 { background: var(--blue-lt); border-color: var(--blue); color: var(--blue-dk); }
+  .scale-btn.s4 { background: #EAF3DE; border-color: #639922; color: #3B6D11; }
+  .scale-btn.s5 { background: var(--teal-lt); border-color: var(--teal); color: var(--teal-dk); }
+
+  .submit-area { margin-top: 1.5rem; }
+  .err-msg { font-size: 13px; color: var(--red-dk); background: var(--red-lt); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; display: none; }
+  .btn-submit { width: 100%; padding: 13px; background: var(--teal); color: #fff; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn-submit:hover { background: var(--teal-dk); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* REPORT */
+  .report-wrap { max-width: 600px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .report-head { text-align: center; margin-bottom: 2rem; }
+  .report-head .check { width: 56px; height: 56px; background: var(--teal-lt); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+  .report-head h2 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .report-head p { font-size: 13px; color: var(--gray-500); }
+
+  .overall-card { border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem; text-align: center; border: 1px solid; }
+  .overall-good { background: var(--teal-lt); border-color: #5DCAA5; }
+  .overall-warn { background: var(--amber-lt); border-color: #FAC775; }
+  .overall-risk { background: var(--red-lt); border-color: #F09595; }
+  .overall-pct { font-size: 40px; font-weight: 700; margin-bottom: 4px; }
+  .overall-good .overall-pct { color: var(--teal-dk); }
+  .overall-warn .overall-pct { color: var(--amber-dk); }
+  .overall-risk .overall-pct { color: var(--red-dk); }
+  .overall-label { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .overall-good .overall-label { color: var(--teal-dk); }
+  .overall-warn .overall-label { color: var(--amber-dk); }
+  .overall-risk .overall-label { color: var(--red-dk); }
+  .overall-msg { font-size: 13px; line-height: 1.6; }
+  .overall-good .overall-msg { color: #0F6E56; }
+  .overall-warn .overall-msg { color: var(--amber-dk); }
+  .overall-risk .overall-msg { color: var(--red-dk); }
+
+  .axes-section h3 { font-size: 14px; font-weight: 600; color: var(--gray-500); margin-bottom: 12px; }
+  .axis-card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 1rem 1.25rem; margin-bottom: 8px; }
+  .axis-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .axis-name { font-size: 14px; font-weight: 600; }
+  .axis-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .badge-good { background: var(--teal-lt); color: var(--teal-dk); }
+  .badge-warn { background: var(--amber-lt); color: var(--amber-dk); }
+  .badge-risk { background: var(--red-lt); color: var(--red-dk); }
+  .bar-bg { height: 7px; background: var(--gray-100); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .fill-good { background: var(--teal); }
+  .fill-warn { background: var(--amber); }
+  .fill-risk { background: var(--red); }
+  .axis-recs { font-size: 12px; color: var(--gray-500); line-height: 1.6; }
+  .axis-recs b { color: var(--gray-800); }
+
+  .save-status { text-align: center; font-size: 13px; margin: 1rem 0; padding: 10px; border-radius: var(--radius-sm); }
+  .save-ok { background: var(--teal-lt); color: var(--teal-dk); }
+  .save-fail { background: var(--amber-lt); color: var(--amber-dk); }
+
+  .btn-restart { display: block; width: 100%; padding: 11px; background: var(--gray-100); color: var(--gray-800); border: none; border-radius: var(--radius); font-size: 14px; cursor: pointer; font-family: inherit; margin-top: 1rem; }
+  .btn-restart:hover { background: var(--gray-100); }
+  .btn-print { display: block; width: 100%; padding: 11px; background: var(--blue-lt); color: var(--blue-dk); border: 1px solid var(--blue); border-radius: var(--radius); font-size: 14px; cursor: pointer; font-family: inherit; margin-top: 8px; font-weight: 600; }
+  .btn-print:hover { background: #B5D4F4; }
+
+  @media print { .btn-restart, .btn-print { display: none; } }
+  @media (max-width: 480px) { .scale-btn { font-size: 10px; padding: 6px 2px; } }
+</style>
+</head>
+<body>
+
+<!-- ======= WELCOME PAGE ======= -->
+<div id="pg-welcome" class="page active">
+  <div class="welcome-wrap">
+    <div class="welcome-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+    </div>
+    <h1>استبيان الصحة النفسية في بيئة العمل</h1>
+    <p>يساعدك هذا الاستبيان على تقييم المخاطر النفسية في مكان عملك عبر ستة محاور رئيسية. إجاباتك سرية وستحصل على تقرير فوري.</p>
+    <div class="info-chips">
+      <span class="chip">⏱ 5 دقائق</span>
+      <span class="chip">20 سؤالاً</span>
+      <span class="chip">6 محاور</span>
+      <span class="chip">تقرير فوري</span>
+    </div>
+    <div class="name-field">
+      <label>الاسم (اختياري)</label>
+      <input type="text" id="inp-name" placeholder="أدخل اسمك أو اترك فارغاً للخصوصية">
+    </div>
+    <div class="dept-field">
+      <label>القسم / الإدارة (اختياري)</label>
+      <input type="text" id="inp-dept" placeholder="مثال: الموارد البشرية">
+    </div>
+    <button class="btn-start" onclick="startSurvey()">ابدأ الاستبيان ←</button>
+  </div>
+</div>
+
+<!-- ======= SURVEY PAGE ======= -->
+<div id="pg-survey" class="page">
+  <div class="survey-wrap">
+    <div class="top-bar">
+      <h2>استبيان الصحة النفسية في بيئة العمل</h2>
+      <span class="prog-text" id="prog-txt">0 / 20</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div id="questions-container"></div>
+    <div class="submit-area">
+      <div class="err-msg" id="err-msg">يرجى الإجابة على جميع الأسئلة قبل عرض التقرير.</div>
+      <button class="btn-submit" id="btn-submit" onclick="submitSurvey()">عرض تقريري الآن ←</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= REPORT PAGE ======= -->
+<div id="pg-report" class="page">
+  <div class="report-wrap">
+    <div class="report-head">
+      <div class="check">
+        <svg width="28" height="28" fill="none" stroke="#1D9E75" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2>تقريرك الشخصي</h2>
+      <p id="report-subtitle">بناءً على إجاباتك على 20 سؤالاً في ست محاور</p>
+    </div>
+    <div id="save-status"></div>
+    <div id="report-body"></div>
+    <button class="btn-print" onclick="window.print()">🖨 طباعة / حفظ PDF</button>
+    <button class="btn-restart" onclick="restartSurvey()">↺ إعادة الاستبيان</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  ⚙️  ضع رابط Google Apps Script هنا بعد نشره
+// ============================================================
+const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+// ============================================================
+
+const AXES = [
+  { id:"roles", title:"الأدوار", num:"١", desc:"مدى وضوح المهام والمسؤوليات",
+    qs:["مهامي الوظيفية واضحة ومحددة بشكل جيد.",
+        "لا يوجد تعارض بين المهام المختلفة المطلوبة مني.",
+        "أعرف بوضوح دوري داخل فريق العمل والمنظمة.",
+        "التسلسل الإداري والهيكل التنظيمي واضح لي."] },
+  { id:"demands", title:"الاحتياجات", num:"٢", desc:"عبء العمل وأنماطه وبيئته",
+    qs:["عبء العمل الموكل إليّ مناسب ولا يُسبب ضغطًا زائدًا.",
+        "مؤهلاتي ومهاراتي تتناسب مع المهام المطلوبة مني.",
+        "لا أشعر بالإرهاق بسبب ساعات العمل الطويلة.",
+        "بيئة العمل المادية (الإضاءة والحرارة والتهوية) مريحة."] },
+  { id:"control", title:"التحكم", num:"٣", desc:"مدى صلاحية الموظف في إدارة عمله",
+    qs:["أملك قدرًا كافيًا من الاستقلالية في أسلوب تنفيذ مهامي.",
+        "يُتاح لي المشاركة في قرارات تخص عملي المباشر.",
+        "لدي فرص حقيقية لتطوير مهاراتي والنمو الوظيفي."] },
+  { id:"relationships", title:"العلاقات", num:"٤", desc:"جودة العلاقات بين الموظفين والمديرين",
+    qs:["العلاقات بين الزملاء إيجابية وداعمة.",
+        "لا أتعرض للتنمر أو التهميش أو التمييز في العمل.",
+        "أشعر بالراحة في التعبير عن مخاوفي لمديري.",
+        "يتعامل المديرون مع الشكاوى والمشكلات بجدية."] },
+  { id:"support", title:"الدعم", num:"٥", desc:"الدعم والموارد المقدمة من المنظمة",
+    qs:["أتلقى الدعم والتوجيه الكافي من مديري المباشر.",
+        "المنظمة توفر موارد كافية لإتمام مهامي.",
+        "يُقدَّر جهدي ويُشاد به عند الإنجاز.",
+        "أشعر أن المنظمة تهتم بصحتي النفسية وسلامتي."] },
+  { id:"change", title:"التغيير", num:"٦", desc:"إدارة التغيير التنظيمي",
+    qs:["أُبلَّغ بوضوح عن أي تغييرات تنظيمية قبل تطبيقها.",
+        "أُستشار أو يُؤخذ رأيي عند التخطيط للتغييرات.",
+        "أتلقى الدعم والتدريب اللازمين خلال مراحل التغيير."] }
+];
+
+const LABELS = ["لا أوافق بشدة","لا أوافق","محايد","أوافق","أوافق بشدة"];
+
+const RECS = {
+  roles: ["تأكد من وجود وصف وظيفي واضح ومحدّث.","ناقش مع مديرك أي تعارض أو غموض في المهام.","اطلب اجتماعًا دوريًا لمراجعة الأهداف والأدوار."],
+  demands: ["تحدث مع مديرك حول إعادة توزيع المهام عند الحاجة.","استخدم أدوات إدارة الوقت لتحديد الأولويات.","احرص على أخذ فترات راحة منتظمة خلال يوم العمل."],
+  control: ["اطلب مزيدًا من الصلاحية في قرارات عملك اليومي.","شارك في برامج التدريب والتطوير الوظيفي المتاحة.","تحدث مع مديرك عن مسار تطويرك المهني."],
+  relationships: ["أبلغ مديرك أو الموارد البشرية عن أي سلوك غير لائق.","شارك في الأنشطة الجماعية لبناء علاقات إيجابية.","استخدم قنوات الشكاوى الرسمية إذا لزم الأمر."],
+  support: ["اطلب جلسات تقييم دورية للحصول على تغذية راجعة.","تعرف على برامج الصحة النفسية المتاحة في مؤسستك.","لا تتردد في طلب الدعم عند الشعور بالإرهاق."],
+  change: ["اطلب توضيحات كاملة عن أي تغييرات تؤثر على عملك.","شارك بآرائك في قنوات التواصل الرسمية أثناء التغيير.","ابحث عن مرشد يدعمك خلال مراحل التحول."]
+};
+
+const answers = {};
+let userName = "", userDept = "";
+
+function colorInfo(pct) {
+  if (pct >= 70) return { cls:"good", badge:"badge-good", fill:"fill-good", label:"منخفض المخاطر" };
+  if (pct >= 45) return { cls:"warn", badge:"badge-warn", fill:"fill-warn", label:"يحتاج تحسين" };
+  return { cls:"risk", badge:"badge-risk", fill:"fill-risk", label:"مخاطر مرتفعة" };
+}
+
+function startSurvey() {
+  userName = document.getElementById("inp-name").value.trim();
+  userDept = document.getElementById("inp-dept").value.trim();
+  buildQuestions();
+  show("pg-survey");
+}
+
+function buildQuestions() {
+  const c = document.getElementById("questions-container");
+  c.innerHTML = "";
+  AXES.forEach(ax => {
+    const card = document.createElement("div");
+    card.className = "section-block";
+    card.innerHTML = `<div class="sec-header"><div class="sec-num">${ax.num}</div><div><div class="sec-title">${ax.title}</div><div class="sec-desc">${ax.desc}</div></div></div>`;
+    ax.qs.forEach((q, qi) => {
+      const key = ax.id + "_" + qi;
+      const row = document.createElement("div");
+      row.className = "q-row";
+      const scaleHtml = LABELS.map((lbl, vi) =>
+        `<button class="scale-btn" data-key="${key}" data-val="${vi+1}" onclick="pickAnswer(this,'${key}',${vi+1})">${lbl}</button>`
+      ).join("");
+      row.innerHTML = `<div class="q-text">${q}</div><div class="scale-row">${scaleHtml}</div>`;
+      card.appendChild(row);
+    });
+    c.appendChild(card);
+  });
+}
+
+function pickAnswer(btn, key, val) {
+  answers[key] = val;
+  document.querySelectorAll(`[data-key="${key}"]`).forEach(b => b.className = "scale-btn");
+  btn.className = `scale-btn s${val}`;
+  updateProgress();
+}
+
+function totalQs() { return AXES.reduce((s,a) => s + a.qs.length, 0); }
+
+function updateProgress() {
+  const done = Object.keys(answers).length;
+  const total = totalQs();
+  const pct = Math.round(done / total * 100);
+  document.getElementById("prog-fill").style.width = pct + "%";
+  document.getElementById("prog-txt").textContent = done + " / " + total;
+}
+
+function submitSurvey() {
+  if (Object.keys(answers).length < totalQs()) {
+    document.getElementById("err-msg").style.display = "block";
+    return;
+  }
+  buildReport();
+  show("pg-report");
+}
+
+function buildReport() {
+  const axScores = AXES.map(ax => {
+    let sum = 0;
+    ax.qs.forEach((_,qi) => { sum += (answers[ax.id+"_"+qi] || 3); });
+    return { ...ax, pct: Math.round(sum / (ax.qs.length * 5) * 100) };
+  });
+
+  const overall = Math.round(axScores.reduce((s,a) => s+a.pct, 0) / axScores.length);
+  const ov = colorInfo(overall);
+
+  const msgs = {
+    good: "بيئة عملك تتمتع بمستوى صحي نسبيًا من الناحية النفسية. استمر في تعزيز نقاط القوة والانتباه للمحاور التي تحتاج تحسينًا.",
+    warn: "هناك جوانب تحتاج اهتمامًا في بيئة عملك. راجع المحاور ذات المخاطر وابدأ بخطوات تحسينية.",
+    risk: "توجد مخاطر نفسية ملحوظة في بيئة عملك. يُنصح بمناقشة النتائج مع المختصين والمديرين المعنيين."
+  };
+
+  const nameLabel = userName ? ` — ${userName}` : "";
+  const deptLabel = userDept ? ` | ${userDept}` : "";
+  document.getElementById("report-subtitle").textContent = `بناءً على إجاباتك على ${totalQs()} سؤالاً في ست محاور${nameLabel}${deptLabel}`;
+
+  let html = `<div class="overall-card overall-${ov.cls}">
+    <div class="overall-pct">${overall}%</div>
+    <div class="overall-label">${ov.label}</div>
+    <div class="overall-msg">${msgs[ov.cls]}</div>
+  </div>
+  <div class="axes-section"><h3>نتائج المحاور الستة</h3>`;
+
+  axScores.forEach(ax => {
+    const c = colorInfo(ax.pct);
+    const recCount = ax.pct < 45 ? 3 : ax.pct < 70 ? 2 : 0;
+    const recText = recCount > 0
+      ? `<div class="axis-recs"><b>توصيات:</b> ${RECS[ax.id].slice(0, recCount).join(" • ")}</div>`
+      : `<div class="axis-recs">المحور يعمل بشكل جيد — استمر في المحافظة على هذا المستوى.</div>`;
+    html += `<div class="axis-card">
+      <div class="axis-top"><span class="axis-name">${ax.num} — ${ax.title}</span><span class="axis-badge ${c.badge}">${c.label} ${ax.pct}%</span></div>
+      <div class="bar-bg"><div class="bar-fill ${c.fill}" style="width:${ax.pct}%"></div></div>
+      ${recText}
+    </div>`;
+  });
+
+  html += `</div>`;
+  document.getElementById("report-body").innerHTML = html;
+
+  // حفظ في Google Sheets
+  saveToSheets(axScores, overall);
+}
+
+function saveToSheets(axScores, overall) {
+  if (!SCRIPT_URL || SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") {
+    document.getElementById("save-status").innerHTML =
+      `<div class="save-status save-fail">⚠️ رابط Google Sheets لم يُضبط بعد — البيانات لم تُحفظ.</div>`;
+    return;
+  }
+  const payload = {
+    name: userName || "مجهول",
+    dept: userDept || "—",
+    overall,
+    roles:         axScores.find(a=>a.id==="roles").pct,
+    demands:       axScores.find(a=>a.id==="demands").pct,
+    control:       axScores.find(a=>a.id==="control").pct,
+    relationships: axScores.find(a=>a.id==="relationships").pct,
+    support:       axScores.find(a=>a.id==="support").pct,
+    change:        axScores.find(a=>a.id==="change").pct
+  };
+  fetch(SCRIPT_URL, { method:"POST", body: JSON.stringify(payload) })
+    .then(() => {
+      document.getElementById("save-status").innerHTML =
+        `<div class="save-status save-ok">✓ تم حفظ نتائجك بنجاح في قاعدة البيانات.</div>`;
+    })
+    .catch(() => {
+      document.getElementById("save-status").innerHTML =
+        `<div class="save-status save-fail">⚠️ تعذّر الحفظ — تحقق من رابط الـ Script.</div>`;
+    });
+}
+
+function restartSurvey() {
+  Object.keys(answers).forEach(k => delete answers[k]);
+  userName = ""; userDept = "";
+  document.getElementById("inp-name").value = "";
+  document.getElementById("inp-dept").value = "";
+  document.getElementById("err-msg").style.display = "none";
+  show("pg-welcome");
+}
+
+function show(id) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
